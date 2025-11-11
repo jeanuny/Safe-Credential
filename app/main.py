@@ -1,44 +1,72 @@
-from Crypto.Cipher import AES
-from Crypto import Random
+from cryptography.fernet import Fernet
+import base64
+import hashlib
+import bcrypt
+import json
+import os
 
-class AESCipher:
-    def __init__(self, key: bytes, iv: bytes):
-        self.key = key
-        self.iv = iv
+DATA_FILE = 'app/data.json'
 
-    def AES_encrypt(plaintext: bytes, key: bytes, iv: bytes) -> bytes:
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        ciphertext = cipher.encrypt(plaintext)
-        return ciphertext
+def get_key(master_password: str) -> bytes:
+    # Derive a 32-byte Fernet key from the master password
+    key = hashlib.sha256(master_password.encode()).digest()
+    return base64.urlsafe_b64encode(key)
 
-    def AES_decrypt(ciphertext: bytes, key: bytes, iv: bytes) -> bytes:
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        plaintext = cipher.decrypt(ciphertext)
-        return plaintext
+def encrypt(data: str, key: bytes) -> bytes:
+    f = Fernet(key)
+    return f.encrypt(data.encode())
 
-    def pad(data: bytes, block_size: int = 16) -> bytes:
-        padding_length = block_size - (len(data) % block_size)
-        padding = bytes([padding_length] * padding_length)
-        return data + padding
+def decrypt(data: bytes, key: bytes) -> str:
+    f = Fernet(key)
+    return f.decrypt(data).decode()
 
-    def unpad(data: bytes) -> bytes:
-        padding_length = data[-1]
-        return data[:-padding_length]
-    
-    def run(self) -> None:
-        key = Random.get_random_bytes(16)
-        iv = Random.get_random_bytes(16)
-        plaintext = b'This is a secret message.'
-        
-        #padded_plaintext = self.pad(plaintext)
-        ciphertext = self.AES_encrypt(plaintext, key, iv)
-        decrypted_padded_plaintext = self.AES_decrypt(ciphertext, key, iv)
-        decrypted_plaintext = self.unpad(decrypted_padded_plaintext)
-        
-        print(f'Original Plaintext: {plaintext}')
-        print(f'Ciphertext: {ciphertext}')
-        print(f'Decrypted Plaintext: {decrypted_plaintext}')
+def hash_master_password(master_password: str) -> bytes:
+    return bcrypt.hashpw(master_password.encode(), bcrypt.gensalt())
 
+def verify_master_password(password: str, hashed: bytes) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed)
 
-aes_cipher = AESCipher(key=b'', iv=b'')
-aes_cipher.run()
+def load_data() -> dict:
+    if not os.path.exists(DATA_FILE):
+        return {}
+    with open(DATA_FILE, 'r') as f:
+        return json.load(f)
+
+def save_data(data: dict):
+    with open(DATA_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
+
+def new_entry(data: dict, key: bytes) -> None:
+    website = input("Enter Website name: ")
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+    encrypted_password = encrypt(password, key).decode()
+    data[website] = {
+        'username': username,
+        'password': encrypted_password
+    }
+    save_data(data)
+    print(f"Entry for {website} added.")
+
+def view_entries(data: dict, key: bytes) -> None:
+    for website, entry in data.items():
+        decrypted_password = decrypt(entry['password'].encode(), key)
+        print(f"Website: {website}, Username: {entry['username']}, Password: {decrypted_password}")
+
+def main():
+    data = load_data()
+    master_password = input("Enter master password: ")
+    key = get_key(master_password)
+
+    while True:
+        print("1. Add new entry\n2. View entries\n3. Exit")
+        choice = input("Choose an option: ")
+        if choice == '1':
+            new_entry(data, key)
+        elif choice == '2':
+            view_entries(data, key)
+        elif choice == '3':
+            break
+
+if __name__ == "__main__":
+    main()
