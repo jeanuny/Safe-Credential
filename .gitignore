@@ -1,2 +1,2 @@
 # Never share your data file 
-.json
+*.json
