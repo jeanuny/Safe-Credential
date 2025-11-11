@@ -53,20 +53,20 @@ def view_entries(data: dict, key: bytes) -> None:
         decrypted_password = decrypt(entry['password'].encode(), key)
         print(f"Website: {website}, Username: {entry['username']}, Password: {decrypted_password}")
 
-def main():
-    data = load_data()
-    master_password = input("Enter master password: ")
-    key = get_key(master_password)
+# def main():
+#     data = load_data()
+#     master_password = input("Enter master password: ")
+#     key = get_key(master_password)
 
-    while True:
-        print("1. Add new entry\n2. View entries\n3. Exit")
-        choice = input("Choose an option: ")
-        if choice == '1':
-            new_entry(data, key)
-        elif choice == '2':
-            view_entries(data, key)
-        elif choice == '3':
-            break
+#     while True:
+#         print("1. Add new entry\n2. View entries\n3. Exit")
+#         choice = input("Choose an option: ")
+#         if choice == '1':
+#             new_entry(data, key)
+#         elif choice == '2':
+#             view_entries(data, key)
+#         elif choice == '3':
+#             break
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
