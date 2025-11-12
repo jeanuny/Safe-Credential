@@ -52,7 +52,7 @@ class PasswordManagerApp(ctk.CTk):
         self.new_entry_input_window = ctk.CTkToplevel(self)
         self.new_entry_input_window.title("New Entry")
         self.new_entry_input_window.geometry("300x280")
-        self.minsize(300, 280)
+        self.new_entry_input_window.minsize(300, 280)
         self.new_entry_input_window.grab_set()
         self.new_entry_input_window.focus_set()
         self.new_entry_input_window.transient(self)
