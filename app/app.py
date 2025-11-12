@@ -1,26 +1,58 @@
 from main import *
 import customtkinter as ctk
 
-class PasswordManagerApp(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.title("Safe Credential - Password Manager")
-        self.geometry("400x300")
-        self.minsize(400, 300)
-        
-        self.data = load_data()
-        self.key = None
-        
-        self.create_widgets()
-    
-    def create_widgets(self):
+class ASKMasterPasswordWindow(ctk.CTkToplevel):
+
+    def __init__(self, parent):
+
+        super().__init__(parent)
+        self.title("Master Password")
+        self.geometry("300x150")
+        self.resizable(False, False)
+        self.grab_set()
+        self.focus_set()
+        self.transient(parent)
+        self.parent_app = parent
+
         self.label = ctk.CTkLabel(self, text="Enter Master Password:")
         self.label.pack(pady=10)
         
         self.password_entry = ctk.CTkEntry(self, show="*")
         self.password_entry.pack(pady=10)
         
-        self.login_button = ctk.CTkButton(self, text="Login", command=self.login)
+        self.accept_button = ctk.CTkButton(self, text="Accept", command=self.accept)
+        self.accept_button.focus()
+        self.accept_button.pack(pady=10)
+    
+    def accept(self):
+
+        self.master_password = self.password_entry.get()
+        self.parent_app.set_master_password(self.master_password)
+        self.destroy()
+
+class PasswordManagerApp(ctk.CTk):
+
+    def __init__(self):
+
+        super().__init__()
+        self.title("Safe Credential - Password Manager")
+        self.geometry("400x300")
+        self.resizable(False, False)
+        self.data = load_data()
+        self.key = None
+        self.master_password = None
+        
+        self.create_widgets()
+    
+    def create_widgets(self):
+
+        self.label = ctk.CTkLabel(self, text="Enter Master Password:")
+        self.label.pack(pady=10)
+        
+        self.password_entry = ctk.CTkEntry(self, show="*")
+        self.password_entry.pack(pady=10)
+        
+        self.login_button = ctk.CTkButton(self, text="Login")
         self.login_button.focus()
         self.login_button.pack(pady=10)
         
@@ -32,21 +64,21 @@ class PasswordManagerApp(ctk.CTk):
         self.view_entries_button.pack(pady=10)
         self.view_entries_button.configure(state="disabled")
     
-    def login(self):
-
-        master_password = self.password_entry.get()
-
+    def set_master_password(self, master_password):
+        self.master_password = master_password
         self.key = get_key(master_password)
-
+        
+        # Update UI to show logged in state
+        self.password_entry.delete(0, "end")
+        self.password_entry.insert(0, ("a" for _ in range(len(master_password))))
+        self.password_entry.configure(state="disabled")
+        
+        self.label.configure(text="Logged in successfully!")
+        self.login_button.configure(state="disabled")
+        
         self.new_entry_button.configure(state="normal")
         self.view_entries_button.configure(state="normal")
 
-        self.label.configure(text="Logged in successfully!")
-
-        self.login_button.configure(state="disabled")
-
-        self.password_entry.configure(state="disabled")
-    
     def new_entry(self):
 
         self.new_entry_input_window = ctk.CTkToplevel(self)
@@ -101,8 +133,11 @@ class PasswordManagerApp(ctk.CTk):
         self.new_entry_input_window.destroy()
 
     def view_entries(self):
+
         view_entries(self.data, self.key)
 
 if __name__ == "__main__":
+
     app = PasswordManagerApp()
+    password_window = ASKMasterPasswordWindow(app)
     app.mainloop()
