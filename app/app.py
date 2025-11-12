@@ -4,8 +4,9 @@ import customtkinter as ctk
 class PasswordManagerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Password Manager")
+        self.title("Safe Credential - Password Manager")
         self.geometry("400x300")
+        self.minsize(400, 300)
         
         self.data = load_data()
         self.key = None
@@ -20,6 +21,7 @@ class PasswordManagerApp(ctk.CTk):
         self.password_entry.pack(pady=10)
         
         self.login_button = ctk.CTkButton(self, text="Login", command=self.login)
+        self.login_button.focus()
         self.login_button.pack(pady=10)
         
         self.new_entry_button = ctk.CTkButton(self, text="New Entry", command=self.new_entry)
@@ -31,12 +33,18 @@ class PasswordManagerApp(ctk.CTk):
         self.view_entries_button.configure(state="disabled")
     
     def login(self):
+
         master_password = self.password_entry.get()
+
         self.key = get_key(master_password)
+
         self.new_entry_button.configure(state="normal")
         self.view_entries_button.configure(state="normal")
+
         self.label.configure(text="Logged in successfully!")
+
         self.login_button.configure(state="disabled")
+
         self.password_entry.configure(state="disabled")
     
     def new_entry(self):
@@ -44,6 +52,7 @@ class PasswordManagerApp(ctk.CTk):
         self.new_entry_input_window = ctk.CTkToplevel(self)
         self.new_entry_input_window.title("New Entry")
         self.new_entry_input_window.geometry("300x280")
+        self.minsize(300, 280)
         self.new_entry_input_window.grab_set()
         self.new_entry_input_window.focus_set()
         self.new_entry_input_window.transient(self)
