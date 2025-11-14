@@ -17,8 +17,8 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
         self.label = ctk.CTkLabel(self, text="Enter Master Password:")
         self.label.pack(pady=10)
         
-        self.password_entry = ctk.CTkEntry(self, show="*")
-        self.password_entry.pack(pady=10)
+        self.entry_password = ctk.CTkEntry(self, show="*")
+        self.entry_password.pack(pady=10)
         
         self.accept_button = ctk.CTkButton(self, text="Accept", command=self.accept)
         self.accept_button.focus()
@@ -26,7 +26,7 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
     
     def accept(self):
 
-        self.master_password = self.password_entry.get()
+        self.master_password = self.entry_password.get()
         self.parent_app.set_master_password(self.master_password)
         self.destroy()
 
@@ -41,7 +41,7 @@ class PasswordManagerApp(ctk.CTk):
         self.data = load_data()
         self.key = None
         self.master_password = None
-        
+
         self.create_widgets()
     
     def create_widgets(self):
@@ -64,13 +64,14 @@ class PasswordManagerApp(ctk.CTk):
         self.view_entries_button.pack(pady=10)
         self.view_entries_button.configure(state="disabled")
     
-    def set_master_password(self, master_password):
+    def set_master_password(self, master_password):        
+
         self.master_password = master_password
         self.key = get_key(master_password)
-        
+
         # Update UI to show logged in state
         self.password_entry.delete(0, "end")
-        self.password_entry.insert(0, ("a" for _ in range(len(master_password))))
+        self.password_entry.insert(0, len(master_password) * "a")
         self.password_entry.configure(state="disabled")
         
         self.label.configure(text="Logged in successfully!")
@@ -134,7 +135,47 @@ class PasswordManagerApp(ctk.CTk):
 
     def view_entries(self):
 
-        view_entries(self.data, self.key)
+        self.view_entries_window = ctk.CTkToplevel(self)
+        self.view_entries_window.title("View Entries")
+        self.view_entries_window.geometry("545x400")
+        self.view_entries_window.resizable(False, True)
+        self.view_entries_window.grab_set()
+        
+        # Create header frame
+        header_frame = ctk.CTkFrame(self.view_entries_window)
+        header_frame.pack(fill="x", padx=10, pady=10)
+        
+        # Create headers
+        website_header = ctk.CTkLabel(header_frame, text="Website", font=("Arial", 12, "bold"), width=150, anchor="center")
+        website_header.pack(side="left", padx=10)
+        
+        username_header = ctk.CTkLabel(header_frame, text="Username", font=("Arial", 12, "bold"), width=150, anchor="center")
+        username_header.pack(side="left", padx=10)
+        
+        password_header = ctk.CTkLabel(header_frame, text="Password", font=("Arial", 12, "bold"), width=150, anchor="center")
+        password_header.pack(side="left", padx=10)
+        
+        # Create scrollable frame for entries
+        scrollable_frame = ctk.CTkScrollableFrame(self.view_entries_window, width=545, height=320)
+        scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Add entries
+        for website, entry in self.data.items():
+            decrypted_password = decrypt(entry['password'].encode(), self.key)
+            
+            entry_frame = ctk.CTkFrame(scrollable_frame, fg_color=("gray90", "gray20"))
+            entry_frame.pack(fill="x", pady=5)
+            
+            website_label = ctk.CTkLabel(entry_frame, text=website, width=150, anchor="center")
+            website_label.pack(side="left", padx=5, pady=5)
+            
+            username_label = ctk.CTkLabel(entry_frame, text=entry['username'], width=150, anchor="center")
+            username_label.pack(side="left", padx=10, pady=5)
+            
+            password_label = ctk.CTkLabel(entry_frame, text=decrypted_password, width=150, anchor="center")
+            password_label.pack(side="left", padx=10, pady=5)
+        
+
 
 if __name__ == "__main__":
 
