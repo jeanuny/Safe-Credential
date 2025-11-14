@@ -11,6 +11,8 @@ An App that helps you store all your credentials, logings, and password of any s
 - bcrypt
 - hashlib
 - customtkinter
+- tkinter
+- pyperclip
 - json
 - os
 

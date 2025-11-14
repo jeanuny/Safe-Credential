@@ -1,5 +1,6 @@
 from main import *
 import customtkinter as ctk
+import pyperclip
 
 class ASKMasterPasswordWindow(ctk.CTkToplevel):
 
@@ -137,7 +138,7 @@ class PasswordManagerApp(ctk.CTk):
 
         self.view_entries_window = ctk.CTkToplevel(self)
         self.view_entries_window.title("View Entries")
-        self.view_entries_window.geometry("545x400")
+        self.view_entries_window.geometry("700x400")
         self.view_entries_window.resizable(False, True)
         self.view_entries_window.grab_set()
         
@@ -156,24 +157,61 @@ class PasswordManagerApp(ctk.CTk):
         password_header.pack(side="left", padx=10)
         
         # Create scrollable frame for entries
-        scrollable_frame = ctk.CTkScrollableFrame(self.view_entries_window, width=545, height=320)
+        scrollable_frame = ctk.CTkScrollableFrame(self.view_entries_window, width=700, height=320)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Add entries
+        # Add entries (decrypt on demand)
         for website, entry in self.data.items():
-            decrypted_password = decrypt(entry['password'].encode(), self.key)
-            
+            encrypted_password = entry['password']
+
             entry_frame = ctk.CTkFrame(scrollable_frame, fg_color=("gray90", "gray20"))
             entry_frame.pack(fill="x", pady=5)
-            
+
             website_label = ctk.CTkLabel(entry_frame, text=website, width=150, anchor="center")
             website_label.pack(side="left", padx=5, pady=5)
-            
+
             username_label = ctk.CTkLabel(entry_frame, text=entry['username'], width=150, anchor="center")
             username_label.pack(side="left", padx=10, pady=5)
-            
-            password_label = ctk.CTkLabel(entry_frame, text=decrypted_password, width=150, anchor="center")
+
+            # show password masked by default (fixed-length mask) and provide a Show/Hide button
+            masked = "•" * 8
+            password_label = ctk.CTkLabel(entry_frame, text=masked, width=150, anchor="center")
             password_label.pack(side="left", padx=10, pady=5)
+
+            copy_button = ctk.CTkButton(entry_frame, text="Copy", width=60)
+            copy_button.pack(side="left", padx=5, pady=5)
+
+            # Create Show/Hide button and toggle function that decrypts on demand
+            show_button = ctk.CTkButton(entry_frame, text="Show", width=60)
+            show_button.pack(side="left", padx=5, pady=5)
+
+            def toggle(lbl=password_label, enc=encrypted_password, btn=show_button):
+                # Decrypt only when requested; re-mask on hide. Use try/except to catch decryption errors.
+                if btn.cget("text") == "Show":
+                    try:
+                        pwd = decrypt(enc.encode(), self.key)
+                    except Exception:
+                        pwd = "<decryption error>"
+                    lbl.configure(text=pwd)
+                    btn.configure(text="Hide")
+                else:
+                    lbl.configure(text="•" * 8)
+                    btn.configure(text="Show")
+
+            def copy_to_clipboard(enc=encrypted_password, web=website, btn=show_button):
+                try:
+                    if btn.cget("text") == "Show":
+                        print("Password is hidden. Please show it before copying.")
+                        return
+                    pwd = decrypt(enc.encode(), self.key)
+                except Exception:
+                    print(f"Unable to decrypt password for {web}")
+                    return
+                pyperclip.copy(pwd)
+                print(f"Password for {web} copied to clipboard.")
+
+            copy_button.configure(command=copy_to_clipboard)
+            show_button.configure(command=toggle)
         
 
 
