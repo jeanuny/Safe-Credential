@@ -8,7 +8,7 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
 
         super().__init__(parent)
         self.title("Master Password")
-        self.geometry("300x150")
+        self.geometry(self.Center(300, 150))
         self.resizable(False, False)
         self.grab_set()
         self.focus_set()
@@ -20,6 +20,7 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
         
         self.entry_password = ctk.CTkEntry(self, show="*")
         self.entry_password.pack(pady=10)
+        self.entry_password.bind("<Return>", lambda event: self.accept())
         
         self.accept_button = ctk.CTkButton(self, text="Accept", command=self.accept)
         self.accept_button.focus()
@@ -31,13 +32,23 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
         self.parent_app.set_master_password(self.master_password)
         self.destroy()
 
+    def Center(self, width=300, height=150):
+        self.update_idletasks()
+        w = width
+        h = height
+        ws = self.winfo_screenwidth()
+        hs = self.winfo_screenheight()
+        x = (ws // 2) - (w // 2)
+        y = (hs // 2) - (h // 2)
+        self.geometry(f'{w}x{h}+{x}+{y}')
+
 class PasswordManagerApp(ctk.CTk):
 
     def __init__(self):
 
         super().__init__()
         self.title("Safe Credential - Password Manager")
-        self.geometry("400x300")
+        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 280))
         self.resizable(False, False)
         self.data = load_data()
         self.key = None
@@ -65,12 +76,11 @@ class PasswordManagerApp(ctk.CTk):
         self.view_entries_button.pack(pady=10)
         self.view_entries_button.configure(state="disabled")
     
-    def set_master_password(self, master_password):        
+    def set_master_password(self, master_password):
 
         self.master_password = master_password
         self.key = get_key(master_password)
 
-        # Update UI to show logged in state
         self.password_entry.delete(0, "end")
         self.password_entry.insert(0, len(master_password) * "a")
         self.password_entry.configure(state="disabled")
@@ -85,8 +95,8 @@ class PasswordManagerApp(ctk.CTk):
 
         self.new_entry_input_window = ctk.CTkToplevel(self)
         self.new_entry_input_window.title("New Entry")
-        self.new_entry_input_window.geometry("300x280")
-        self.new_entry_input_window.minsize(300, 280)
+        self.new_entry_input_window.geometry(ASKMasterPasswordWindow.Center(self.new_entry_input_window, 300, 280))
+        self.new_entry_input_window.resizable(False, False)
         self.new_entry_input_window.grab_set()
         self.new_entry_input_window.focus_set()
         self.new_entry_input_window.transient(self)
@@ -138,15 +148,14 @@ class PasswordManagerApp(ctk.CTk):
 
         self.view_entries_window = ctk.CTkToplevel(self)
         self.view_entries_window.title("View Entries")
-        self.view_entries_window.geometry("700x400")
+        self.view_entries_window.geometry(ASKMasterPasswordWindow.Center(self.view_entries_window, 700, 400))
         self.view_entries_window.resizable(False, True)
         self.view_entries_window.grab_set()
+        self.view_entries_window.focus_set()
         
-        # Create header frame
         header_frame = ctk.CTkFrame(self.view_entries_window)
         header_frame.pack(fill="x", padx=10, pady=10)
         
-        # Create headers
         website_header = ctk.CTkLabel(header_frame, text="Website", font=("Arial", 12, "bold"), width=150, anchor="center")
         website_header.pack(side="left", padx=10)
         
@@ -156,11 +165,9 @@ class PasswordManagerApp(ctk.CTk):
         password_header = ctk.CTkLabel(header_frame, text="Password", font=("Arial", 12, "bold"), width=150, anchor="center")
         password_header.pack(side="left", padx=10)
         
-        # Create scrollable frame for entries
         scrollable_frame = ctk.CTkScrollableFrame(self.view_entries_window, width=700, height=320)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Add entries (decrypt on demand)
         for website, entry in self.data.items():
             encrypted_password = entry['password']
 
@@ -173,7 +180,6 @@ class PasswordManagerApp(ctk.CTk):
             username_label = ctk.CTkLabel(entry_frame, text=entry['username'], width=150, anchor="center")
             username_label.pack(side="left", padx=10, pady=5)
 
-            # show password masked by default (fixed-length mask) and provide a Show/Hide button
             masked = "•" * 8
             password_label = ctk.CTkLabel(entry_frame, text=masked, width=150, anchor="center")
             password_label.pack(side="left", padx=10, pady=5)
@@ -181,12 +187,11 @@ class PasswordManagerApp(ctk.CTk):
             copy_button = ctk.CTkButton(entry_frame, text="Copy", width=60)
             copy_button.pack(side="left", padx=5, pady=5)
 
-            # Create Show/Hide button and toggle function that decrypts on demand
             show_button = ctk.CTkButton(entry_frame, text="Show", width=60)
             show_button.pack(side="left", padx=5, pady=5)
 
             def toggle(lbl=password_label, enc=encrypted_password, btn=show_button):
-                # Decrypt only when requested; re-mask on hide. Use try/except to catch decryption errors.
+
                 if btn.cget("text") == "Show":
                     try:
                         pwd = decrypt(enc.encode(), self.key)
