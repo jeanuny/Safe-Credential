@@ -31,6 +31,7 @@ An App that helps you store all your credentials, logings, and password of any s
 - User authentication with hashed passwords.
 - Intuitive GUI built with CustomTkinter for easy navigation.
 - View, add, update, and delete credential entries. # Update and Delete features to be implemented in future versions.
+- OTP generation. # OTP feature to be implemented in future versions.
 
 # Note
 
