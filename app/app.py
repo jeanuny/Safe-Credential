@@ -48,6 +48,7 @@ class PasswordManagerApp(ctk.CTk):
 
         super().__init__()
         self.title("Safe Credential - Password Manager")
+        self.iconbitmap(default="app/icon.ico")
         self.geometry(ASKMasterPasswordWindow.Center(self, 300, 280))
         self.resizable(False, False)
         self.data = load_data()
@@ -184,28 +185,28 @@ class PasswordManagerApp(ctk.CTk):
             password_label = ctk.CTkLabel(entry_frame, text=masked, width=150, anchor="center")
             password_label.pack(side="left", padx=10, pady=5)
 
-            copy_button = ctk.CTkButton(entry_frame, text="Copy", width=60)
+            copy_button = ctk.CTkButton(entry_frame, text="📑", width=40)
             copy_button.pack(side="left", padx=5, pady=5)
 
-            show_button = ctk.CTkButton(entry_frame, text="Show", width=60)
+            show_button = ctk.CTkButton(entry_frame, text="👁", width=40)
             show_button.pack(side="left", padx=5, pady=5)
 
             def toggle(lbl=password_label, enc=encrypted_password, btn=show_button):
 
-                if btn.cget("text") == "Show":
+                if btn.cget("text") == "👁":
                     try:
                         pwd = decrypt(enc.encode(), self.key)
                     except Exception:
                         pwd = "<decryption error>"
                     lbl.configure(text=pwd)
-                    btn.configure(text="Hide")
+                    btn.configure(text="🕶")
                 else:
                     lbl.configure(text="•" * 8)
-                    btn.configure(text="Show")
+                    btn.configure(text="👁")
 
             def copy_to_clipboard(enc=encrypted_password, web=website, btn=show_button):
                 try:
-                    if btn.cget("text") == "Show":
+                    if btn.cget("text") == "👁":
                         print("Password is hidden. Please show it before copying.")
                         return
                     pwd = decrypt(enc.encode(), self.key)
