@@ -49,7 +49,7 @@ class PasswordManagerApp(ctk.CTk):
         super().__init__()
         self.title("Safe Credential - Password Manager")
         self.iconbitmap(default="app/icon.ico")
-        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 280))
+        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 300))
         self.resizable(False, False)
         self.data = load_data()
         self.key = None
@@ -66,7 +66,6 @@ class PasswordManagerApp(ctk.CTk):
         self.password_entry.pack(pady=10)
         
         self.login_button = ctk.CTkButton(self, text="Login")
-        self.login_button.focus()
         self.login_button.pack(pady=10)
         
         self.new_entry_button = ctk.CTkButton(self, text="New Entry", command=self.new_entry)
@@ -75,6 +74,22 @@ class PasswordManagerApp(ctk.CTk):
         
         self.view_entries_button = ctk.CTkButton(self, text="View Entries", command=self.view_entries)
         self.view_entries_button.pack(pady=10)
+        self.view_entries_button.configure(state="disabled")
+
+        self.logoff_button = ctk.CTkButton(self, text="Log Off", command=self.log_off)
+        self.logoff_button.pack(pady=10)
+
+    def log_off(self):
+        self.master_password = None
+        self.key = None
+
+        self.password_entry.configure(state="normal")
+        self.password_entry.delete(0, "end")
+
+        self.label.configure(text="Enter Master Password:")
+        self.login_button.configure(state="normal")
+
+        self.new_entry_button.configure(state="disabled")
         self.view_entries_button.configure(state="disabled")
     
     def set_master_password(self, master_password):
@@ -191,6 +206,9 @@ class PasswordManagerApp(ctk.CTk):
             show_button = ctk.CTkButton(entry_frame, text="👁", width=40)
             show_button.pack(side="left", padx=5, pady=5)
 
+            modify_button = ctk.CTkButton(entry_frame, text="✏️", width=40, command=lambda web=website: self.modify_entry(web))
+            modify_button.pack(side="left", padx=5, pady=5)
+
             def toggle(lbl=password_label, enc=encrypted_password, btn=show_button):
 
                 if btn.cget("text") == "👁":
@@ -218,6 +236,59 @@ class PasswordManagerApp(ctk.CTk):
 
             copy_button.configure(command=copy_to_clipboard)
             show_button.configure(command=toggle)
+    
+    def modify_entry(self, website):
+
+        self.view_entries_window.destroy()
+
+        entry = self.data.get(website)
+        if not entry:
+            print(f"No entry found for {website}")
+            return
+        
+        self.modify_entry_window = ctk.CTkToplevel(self)
+        self.modify_entry_window.title(f"Modify Entry - {website}")
+        self.modify_entry_window.geometry(ASKMasterPasswordWindow.Center(self.modify_entry_window, 300, 280))
+        self.modify_entry_window.resizable(False, False)
+        self.modify_entry_window.grab_set()
+        self.modify_entry_window.focus_set()
+        self.modify_entry_window.transient(self)
+
+        self.username_label = ctk.CTkLabel(self.modify_entry_window, text="Username:")
+        self.username_label.pack(pady=5)
+
+        self.username_entry = ctk.CTkEntry(self.modify_entry_window)
+        self.username_entry.insert(0, entry['username'])
+        self.username_entry.pack(pady=5)
+
+        self.password_label = ctk.CTkLabel(self.modify_entry_window, text="Password:")
+        self.password_label.pack(pady=5)
+
+        decrypted_password = decrypt(entry['password'].encode(), self.key)
+
+        self.password_entry = ctk.CTkEntry(self.modify_entry_window)
+        self.password_entry.insert(0, decrypted_password)
+        self.password_entry.pack(pady=5)
+
+        self.accept_button = ctk.CTkButton(self.modify_entry_window, text="Save Changes", command=lambda: self.save_modified_entry(website))
+        self.accept_button.pack(pady=10)
+    
+    def save_modified_entry(self, website):
+
+        new_username = self.username_entry.get()
+        new_password = self.password_entry.get()
+
+        encrypted_password = encrypt(new_password, self.key).decode()
+
+        self.data[website] = {
+            'username': new_username,
+            'password': encrypted_password
+        }
+
+        save_data(self.data)
+        print(f"Entry for {website} modified.")
+        self.modify_entry_window.destroy()
+        PasswordManagerApp.view_entries(self)
         
 
 
