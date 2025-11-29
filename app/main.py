@@ -36,6 +36,14 @@ def save_data(data: dict):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=4)
 
+def delete_entry(data: dict, website: str) -> None:
+    if website in data:
+        del data[website]
+        save_data(data)
+        print(f"Entry for {website} deleted.")
+    else:
+        print(f"No entry found for {website}.")
+
 def new_entry(data: dict, key: bytes) -> None:
     website = input("Enter Website name: ")
     username = input("Enter username: ")

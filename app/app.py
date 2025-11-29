@@ -65,7 +65,7 @@ class PasswordManagerApp(ctk.CTk):
         self.password_entry = ctk.CTkEntry(self, show="*")
         self.password_entry.pack(pady=10)
         
-        self.login_button = ctk.CTkButton(self, text="Login")
+        self.login_button = ctk.CTkButton(self, text="Login", command=self.login)
         self.login_button.pack(pady=10)
         
         self.new_entry_button = ctk.CTkButton(self, text="New Entry", command=self.new_entry)
@@ -79,6 +79,20 @@ class PasswordManagerApp(ctk.CTk):
         self.logoff_button = ctk.CTkButton(self, text="Log Off", command=self.log_off)
         self.logoff_button.pack(pady=10)
 
+    def login(self):
+
+        master_password = self.password_entry.get()
+        self.set_master_password(master_password)
+
+        self.login_button.configure(state="disabled")
+        self.new_entry_button.configure(state="normal")
+        self.view_entries_button.configure(state="normal")
+        self.logoff_button.configure(state="normal")
+
+        self.password_entry.configure(state="disabled")
+        self.label.configure(text="Logged in successfully!")
+
+
     def log_off(self):
         self.master_password = None
         self.key = None
@@ -91,6 +105,7 @@ class PasswordManagerApp(ctk.CTk):
 
         self.new_entry_button.configure(state="disabled")
         self.view_entries_button.configure(state="disabled")
+        self.logoff_button.configure(state="disabled")
     
     def set_master_password(self, master_password):
 
@@ -164,7 +179,7 @@ class PasswordManagerApp(ctk.CTk):
 
         self.view_entries_window = ctk.CTkToplevel(self)
         self.view_entries_window.title("View Entries")
-        self.view_entries_window.geometry(ASKMasterPasswordWindow.Center(self.view_entries_window, 700, 400))
+        self.view_entries_window.geometry(ASKMasterPasswordWindow.Center(self.view_entries_window, 750, 400))
         self.view_entries_window.resizable(False, True)
         self.view_entries_window.grab_set()
         self.view_entries_window.focus_set()
@@ -206,8 +221,11 @@ class PasswordManagerApp(ctk.CTk):
             show_button = ctk.CTkButton(entry_frame, text="👁", width=40)
             show_button.pack(side="left", padx=5, pady=5)
 
-            modify_button = ctk.CTkButton(entry_frame, text="✏️", width=40, command=lambda web=website: self.modify_entry(web))
+            modify_button = ctk.CTkButton(entry_frame, text="✍", width=40, command=lambda web=website: self.modify_entry(web))
             modify_button.pack(side="left", padx=5, pady=5)
+
+            delete_button = ctk.CTkButton(entry_frame, text="🗑", width=40, command=lambda web=website: [delete_entry(self.data, web), self.view_entries_window.destroy(), self.view_entries()])
+            delete_button.pack(side="left", padx=5, pady=5)
 
             def toggle(lbl=password_label, enc=encrypted_password, btn=show_button):
 
