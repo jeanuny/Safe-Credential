@@ -30,12 +30,14 @@ An App that helps you store all your credentials, logings, and password of any s
 - Encrypt and decrypt passwords using strong encryption methods.
 - User authentication with hashed passwords.
 - Intuitive GUI built with CustomTkinter for easy navigation.
-- View, add, update, and delete credential entries. # Delete features to be implemented in future versions.
+- View, add, update, and delete credential entries.
 - OTP generation. # OTP feature to be implemented in future versions.
 
 # Note
 
 This application is intended for educational purposes only, as it is only a training project. Always ensure you follow best practices for security and data protection when handling sensitive information.
+
+It is recomended to logout after each use, especially if you are on a shared computer.
 
 Never share your master password or encryption keys with anyone.
 
