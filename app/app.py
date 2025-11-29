@@ -1,6 +1,8 @@
 from main import *
 import customtkinter as ctk
 import pyperclip
+import pyotp
+import time
 
 class ASKMasterPasswordWindow(ctk.CTkToplevel):
 
@@ -42,6 +44,168 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
         y = (hs // 2) - (h // 2)
         self.geometry(f'{w}x{h}+{x}+{y}')
 
+class OTPWindow(ctk.CTkToplevel):
+    """ This class holds the OTP window, it contains the list of all the sites which have an OTP associated. """
+
+    def __init__(self, parent):
+
+        super().__init__(parent)
+        self.title("One-Time Password (OTP)")
+        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 150))
+        self.resizable(False, False)
+        self.grab_set()
+        self.focus
+        self.transient(parent)
+        self.parent_app = parent
+        self.key = parent.key
+        print("OTP Window Key:", self.key)
+        self.otp_data = load_otps()
+        self.timer = {}
+        self.otp_labels = {}
+        self.ttl_labels = {}
+        self.create_widgets()
+
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def on_close(self):
+
+        for timer in self.timer.values():
+            self.after_cancel(timer)
+        self.destroy()
+
+    def get_ttl(self):
+
+        return 30 - (int(time.time()) % 30)
+    
+    def update_otps(self, website, otp_secret):
+        try:
+            otp = pyotp.TOTP(otp_secret)
+            current_otp = otp.now()
+            ttl = self.get_ttl()
+
+            if website in self.otp_labels:
+                self.otp_labels[website].configure(text=current_otp)
+
+            if website in self.ttl_labels:
+                self.ttl_labels[website].configure(text=f"Expires in : {ttl}s")
+            
+            timer_id = self.after(1000,self.update_otps, website, otp_secret)
+            self.timer[website] = timer_id
+
+        except Exception as e:
+            print(f"Error updating OTP for {website}: {e}")
+
+    def create_widgets(self):
+        self.label = ctk.CTkLabel(self, text="One-Time Password (OTP) Manager")
+        self.label.pack(pady=10)
+
+        self.add_otp_button = ctk.CTkButton(self, text="Add OTP", command=self.add_otp_wnd_open)
+        self.add_otp_button.pack(pady=5)
+
+        self.view_otp_button = ctk.CTkButton(self, text="View OTPs", command=self.view_otps)
+        self.view_otp_button.pack(pady=5)
+
+
+    def add_otp_wnd_open(self):
+        self.add_otp_window = ctk.CTkToplevel(self)
+        self.add_otp_window.title("Add OTP")
+        self.add_otp_window.geometry(ASKMasterPasswordWindow.Center(self.add_otp_window, 300, 200))
+        self.add_otp_window.resizable(False, False)
+        self.add_otp_window.grab_set()
+        self.add_otp_window.focus_set()
+        self.add_otp_window.transient(self)
+
+        self.website_label = ctk.CTkLabel(self.add_otp_window, text="Website:")
+        self.website_label.pack(pady=5)
+
+        self.website_entry = ctk.CTkEntry(self.add_otp_window)
+        self.website_entry.pack(pady=5)
+
+        self.otp_secret_label = ctk.CTkLabel(self.add_otp_window, text="OTP Secret:")
+        self.otp_secret_label.pack(pady=5)
+
+        self.otp_secret_entry = ctk.CTkEntry(self.add_otp_window)
+        self.otp_secret_entry.pack(pady=5)
+
+        self.accept_button = ctk.CTkButton(self.add_otp_window, text="Add OTP", command=self.save_new_otp)
+        self.accept_button.pack(pady=10)
+
+    def save_new_otp(self):
+        website = self.website_entry.get()
+        otp_secret = self.otp_secret_entry.get()
+        self.add_otp(website, otp_secret)
+        self.add_otp_window.destroy()
+    
+    def add_otp(self, website: str, otp_secret: str):
+        self.otp_data[website] = otp_secret
+        with open(OTP_FILE, 'w') as f:
+            json.dump(self.otp_data, f, indent=4)
+    
+    def delete_otp(self, website: str):
+        if website in self.otp_data:
+            del self.otp_data[website]
+            with open(OTP_FILE, 'w') as f:
+                json.dump(self.otp_data, f, indent=4)
+
+    def view_otps(self):
+
+        self.view_otp_window = ctk.CTkToplevel(self)
+        self.view_otp_window.title("View OTPs")
+        self.view_otp_window.geometry(ASKMasterPasswordWindow.Center(self.view_otp_window, 500, 400))
+        self.view_otp_window.resizable(False, True)
+        self.view_otp_window.grab_set()
+        self.view_otp_window.focus_set()
+        self.view_otp_window.transient(self)
+
+        for timer in self.timer.values():
+            self.after_cancel(timer)
+
+        self.timer.clear()
+        self.otp_labels.clear()
+        self.ttl_labels.clear()
+
+        self.header_frame = ctk.CTkFrame(self.view_otp_window)
+        self.header_frame.pack(fill="x", padx=10, pady=10)
+
+        website_header = ctk.CTkLabel(self.header_frame, text="Website - OTP - TTL - Copy - Delete", font=("Arial", 12, "bold"))
+        website_header.pack(padx=10)
+
+        scrollable_frame = ctk.CTkScrollableFrame(self.view_otp_window, width=280, height=320)
+        scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        for website, otp_secret in self.otp_data.items():
+            entry_frame = ctk.CTkFrame(scrollable_frame, fg_color=("gray90", "gray20"))
+            entry_frame.pack(fill="x", pady=5)
+            
+            website_label = ctk.CTkLabel(entry_frame, text=website, width=120, anchor="w")
+            website_label.pack(side="left", padx=10, pady=5)
+            
+            otp_label = ctk.CTkLabel(entry_frame, text="000000", font=("Courier", 14, "bold"), width=80)
+            otp_label.pack(side="left", padx=10, pady=5)
+            self.otp_labels[website] = otp_label
+            
+            ttl_label = ctk.CTkLabel(entry_frame, text="Expires in: 30s", width=100)
+            ttl_label.pack(side="left", padx=10, pady=5)
+            self.ttl_labels[website] = ttl_label
+        
+            copy_button = ctk.CTkButton(entry_frame, text="📑", width=40, command=lambda otp=otp_label.cget("text"): self.copy_otp(otp, website))
+            copy_button.pack(side="left", padx=5, pady=5)
+            
+            delete_button = ctk.CTkButton(entry_frame, text="🗑", width=40, command=lambda web=website: self.delete_and_refresh(web))
+            delete_button.pack(side="left", padx=5, pady=5)
+            
+            self.update_otps(website, otp_secret)
+
+    def copy_otp(self, otp, website):
+        pyperclip.copy(otp)
+        print(f"OTP for {website} copied to clipboard.")
+
+    def delete_and_refresh(self, website):
+        self.delete_otp(website)
+        self.view_otp_window.destroy()
+        self.view_otps()
+
+
 class PasswordManagerApp(ctk.CTk):
 
     def __init__(self):
@@ -49,7 +213,7 @@ class PasswordManagerApp(ctk.CTk):
         super().__init__()
         self.title("Safe Credential - Password Manager")
         self.iconbitmap(default="app/icon.ico")
-        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 300))
+        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 350))
         self.resizable(False, False)
         self.data = load_data()
         self.key = None
@@ -76,6 +240,10 @@ class PasswordManagerApp(ctk.CTk):
         self.view_entries_button.pack(pady=10)
         self.view_entries_button.configure(state="disabled")
 
+        self.otp_button = ctk.CTkButton(self, text="OTP Manager", command=self.open_otp_window)
+        self.otp_button.pack(pady=10)
+        self.otp_button.configure(state="normal")
+
         self.logoff_button = ctk.CTkButton(self, text="Log Off", command=self.log_off)
         self.logoff_button.pack(pady=10)
 
@@ -87,6 +255,7 @@ class PasswordManagerApp(ctk.CTk):
         self.login_button.configure(state="disabled")
         self.new_entry_button.configure(state="normal")
         self.view_entries_button.configure(state="normal")
+        self.otp_button.configure(state="normal")
         self.logoff_button.configure(state="normal")
 
         self.password_entry.configure(state="disabled")
@@ -103,6 +272,7 @@ class PasswordManagerApp(ctk.CTk):
         self.label.configure(text="Enter Master Password:")
         self.login_button.configure(state="normal")
 
+        self.otp_button.configure(state="disabled")
         self.new_entry_button.configure(state="disabled")
         self.view_entries_button.configure(state="disabled")
         self.logoff_button.configure(state="disabled")
@@ -121,6 +291,11 @@ class PasswordManagerApp(ctk.CTk):
         
         self.new_entry_button.configure(state="normal")
         self.view_entries_button.configure(state="normal")
+
+    def open_otp_window(self):
+        otp_window = OTPWindow(self)
+        otp_window.mainloop()
+        
 
     def new_entry(self):
 

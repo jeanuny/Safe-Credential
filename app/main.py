@@ -6,6 +6,7 @@ import json
 import os
 
 DATA_FILE = 'app/data.json'
+OTP_FILE = 'app/otps.json'
 
 def get_key(master_password: str) -> bytes:
     # Derive a 32-byte Fernet key from the master password
@@ -30,6 +31,12 @@ def load_data() -> dict:
     if not os.path.exists(DATA_FILE):
         return {}
     with open(DATA_FILE, 'r') as f:
+        return json.load(f)
+
+def load_otps() -> dict:
+    if not os.path.exists(OTP_FILE):
+        return {}
+    with open(OTP_FILE, 'r') as f:
         return json.load(f)
 
 def save_data(data: dict):
