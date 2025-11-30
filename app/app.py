@@ -10,7 +10,6 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
 
         super().__init__(parent)
         self.title("Master Password")
-        self.geometry(self.Center(300, 150))
         self.resizable(False, False)
         self.grab_set()
         self.focus_set()
@@ -27,6 +26,9 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
         self.accept_button = ctk.CTkButton(self, text="Accept", command=self.accept)
         self.accept_button.focus()
         self.accept_button.pack(pady=10)
+
+        self.after(100, lambda: self.geometry(self.Center(300, 150)))
+
     
     def accept(self):
 
@@ -34,7 +36,7 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
         self.parent_app.set_master_password(self.master_password)
         self.destroy()
 
-    def Center(self, width=300, height=150):
+    def Center(self, width:int, height:int):
         self.update_idletasks()
         w = width
         h = height
@@ -42,7 +44,7 @@ class ASKMasterPasswordWindow(ctk.CTkToplevel):
         hs = self.winfo_screenheight()
         x = (ws // 2) - (w // 2)
         y = (hs // 2) - (h // 2)
-        self.geometry(f'{w}x{h}+{x}+{y}')
+        return f'{w}x{h}+{x}+{y}'
 
 class OTPWindow(ctk.CTkToplevel):
     """ This class holds the OTP window, it contains the list of all the sites which have an OTP associated. """
@@ -51,7 +53,6 @@ class OTPWindow(ctk.CTkToplevel):
 
         super().__init__(parent)
         self.title("One-Time Password (OTP)")
-        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 150))
         self.resizable(False, False)
         self.grab_set()
         self.focus
@@ -66,6 +67,9 @@ class OTPWindow(ctk.CTkToplevel):
         self.create_widgets()
 
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.after(100,lambda: self.geometry(ASKMasterPasswordWindow.Center(self, 300, 150)))
+
 
     def on_close(self):
 
@@ -109,7 +113,6 @@ class OTPWindow(ctk.CTkToplevel):
     def add_otp_wnd_open(self):
         self.add_otp_window = ctk.CTkToplevel(self)
         self.add_otp_window.title("Add OTP")
-        self.add_otp_window.geometry(ASKMasterPasswordWindow.Center(self.add_otp_window, 300, 200))
         self.add_otp_window.resizable(False, False)
         self.add_otp_window.grab_set()
         self.add_otp_window.focus_set()
@@ -129,6 +132,9 @@ class OTPWindow(ctk.CTkToplevel):
 
         self.accept_button = ctk.CTkButton(self.add_otp_window, text="Add OTP", command=self.save_new_otp)
         self.accept_button.pack(pady=10)
+
+        self.after(100,lambda: self.add_otp_window.geometry(ASKMasterPasswordWindow.Center(self.add_otp_window, 300, 200)))
+
 
     def save_new_otp(self):
         website = self.website_entry.get()
@@ -151,7 +157,7 @@ class OTPWindow(ctk.CTkToplevel):
 
         self.view_otp_window = ctk.CTkToplevel(self)
         self.view_otp_window.title("View OTPs")
-        self.view_otp_window.geometry(ASKMasterPasswordWindow.Center(self.view_otp_window, 500, 400))
+        self.after(100,lambda: self.view_otp_window.geometry(ASKMasterPasswordWindow.Center(self.view_otp_window, 500, 400)))
         self.view_otp_window.resizable(False, True)
         self.view_otp_window.grab_set()
         self.view_otp_window.focus_set()
@@ -205,7 +211,6 @@ class OTPWindow(ctk.CTkToplevel):
         self.view_otp_window.destroy()
         self.view_otps()
 
-
 class PasswordManagerApp(ctk.CTk):
 
     def __init__(self):
@@ -213,7 +218,7 @@ class PasswordManagerApp(ctk.CTk):
         super().__init__()
         self.title("Safe Credential - Password Manager")
         self.iconbitmap(default="app/icon.ico")
-        self.geometry(ASKMasterPasswordWindow.Center(self, 300, 350))
+        self.after(100,lambda: self.geometry(ASKMasterPasswordWindow.Center(self, 300, 350)))
         self.resizable(False, False)
         self.data = load_data()
         self.key = None
@@ -242,7 +247,7 @@ class PasswordManagerApp(ctk.CTk):
 
         self.otp_button = ctk.CTkButton(self, text="OTP Manager", command=self.open_otp_window)
         self.otp_button.pack(pady=10)
-        self.otp_button.configure(state="normal")
+        self.otp_button.configure(state="disabled")
 
         self.logoff_button = ctk.CTkButton(self, text="Log Off", command=self.log_off)
         self.logoff_button.pack(pady=10)
@@ -291,6 +296,7 @@ class PasswordManagerApp(ctk.CTk):
         
         self.new_entry_button.configure(state="normal")
         self.view_entries_button.configure(state="normal")
+        self.otp_button.configure(state="normal")
 
     def open_otp_window(self):
         otp_window = OTPWindow(self)
@@ -301,7 +307,7 @@ class PasswordManagerApp(ctk.CTk):
 
         self.new_entry_input_window = ctk.CTkToplevel(self)
         self.new_entry_input_window.title("New Entry")
-        self.new_entry_input_window.geometry(ASKMasterPasswordWindow.Center(self.new_entry_input_window, 300, 280))
+        self.after(100,lambda: self.new_entry_input_window.geometry(ASKMasterPasswordWindow.Center(self.new_entry_input_window, 300, 280)))
         self.new_entry_input_window.resizable(False, False)
         self.new_entry_input_window.grab_set()
         self.new_entry_input_window.focus_set()
@@ -354,7 +360,7 @@ class PasswordManagerApp(ctk.CTk):
 
         self.view_entries_window = ctk.CTkToplevel(self)
         self.view_entries_window.title("View Entries")
-        self.view_entries_window.geometry(ASKMasterPasswordWindow.Center(self.view_entries_window, 750, 400))
+        self.after(100, lambda: self.view_entries_window.geometry(ASKMasterPasswordWindow.Center(self.view_entries_window, 750, 400)))
         self.view_entries_window.resizable(False, True)
         self.view_entries_window.grab_set()
         self.view_entries_window.focus_set()
@@ -441,7 +447,7 @@ class PasswordManagerApp(ctk.CTk):
         
         self.modify_entry_window = ctk.CTkToplevel(self)
         self.modify_entry_window.title(f"Modify Entry - {website}")
-        self.modify_entry_window.geometry(ASKMasterPasswordWindow.Center(self.modify_entry_window, 300, 280))
+        self.after(100, lambda : self.modify_entry_window.geometry(ASKMasterPasswordWindow.Center(self.modify_entry_window, 300, 280)))
         self.modify_entry_window.resizable(False, False)
         self.modify_entry_window.grab_set()
         self.modify_entry_window.focus_set()
